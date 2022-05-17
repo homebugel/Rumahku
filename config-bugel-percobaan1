@@ -1,14 +1,102 @@
-proxy-group:
-- name: BUGELMASTER
-  type: select
-  disable-udp: false
-  use:
-  - BugelMaster
-proxy-provider:
-  BugelMaster:
-    type: file
-    path: "./proxy_provider/akungame.yaml
-    healt-check:
-      enable: true
-      url: http://www.gstatic.com/generate_204
-      interval: 99
+#pembuatan proxy group#
+
+proxy-group:                                    #tujuannya adalah menandai barisan proxy providernya sehingga rule provider nanti mengarahkan ke barisan sini
+- name: BUGELMASTER                             #nama salah satu di proxy grup yang mengarah kepada game
+  type: select                                  #select ini bertujuan untuk memilih salah satu akun proxy yang kita miliki namun bisa ubah jadi url-test untuk auto ping
+  disable-udp: false                            #tujuannya adalah untuk port UDP tidak tertutup dan bisa barengan sama port TCP
+  use:                                          #ini ditujukan agar proxy ini mengarahkan kepada salah satu file dari proxy provider
+  - BugelMaster                                 #salah satu nama porxy provider dan induk di file config akun proxy itu sendiri
+proxy-provider:                                 # tujuannya adalah menandai barisan dari semua file config akun proxy kita
+  BugelMaster:                                  #dari sinilah use dari BugelMaster digunakan
+    type: file                                  #tutor menggunakan mode file ketimbang http karena lebih cepat dan jika mode http maka kita harus punya data utama terlebih dahulu
+    path: "./proxy_provider/akungame.yaml       #path ini adalah letak menaruh file akungame.yaml yang berisi akun proxy kita
+    healt-check:                                #bertujuan untuk melihat kualitas ping latency dari akun kalian di YACD
+      enable: true                              #true ditujukan untuk mengaktifkan dari healt-check tersebut namun jika tidak maka ganti dengan false
+      url: http://www.gstatic.com/generate_204  #ini adalah url untuk mengecek jaringan apakah koneksi berjalan atau tidak
+      interval: 99                              #interval adalah jangka waktu untuk melakukan ping latency proxy di YACD seberapa cepat dia melakukan sebuah ping
+
+#pembuatan port#
+
+redir-port: 7892      #port bagian jalur redirect
+tproxy-port: 7895     #port bagian jalur tunnel proxy
+port: 7890            #port bagian openclash
+socks-port: 7891      #jika mengunakan sock wajib di isi
+mixed-port: 7893      #berfungsi untuk menggabungkan semua port yang ada
+mode: rule            #mode ini berujuan rules bisa ganti dengan global atau scrip atau direct
+log-level: info       #ini bertujuan di YACD bisa menampilkan info secara detail
+allow-lan: true       #bertujuan agar bisa koneksi di LAN bisa jalan kalo CFA false
+external-controller: 0.0.0.0:9090   #ini adalah ip standart untuk bisa masuk ke YACD
+secret: 123456                      #kode kamanan untuk masuk ke YACD
+external-ui:: "/usr/share/openclash/dashboard"    #ini lokasi penyimpanan di luci openwrt
+
+#pembuatan DNS#
+
+dns:
+  enable: true                #ini adalah untuk mengaktifkan dns pada openclash
+  ipv6: false                 #saya false karena tidak menggunakan ipv6 namun bagi anda aktif ipv6 boleh true
+  enchanced-mode: redir-host  #disini kita akan masuk ke menu host namun jika mode ip bisa ganti jadi fake-ip
+  listen: 127.0.0.1:7874      #ini adalah ip proxy standar
+  default-nameserver:         #bagian standar pada dns open clash
+  - 144.144.144.144           #dns yang kita gunakan dari alidns-google-cloudflare dan opendns
+  - 119.29.29.29
+  - 8.8.8.8
+  - 8.8.4.4
+  - 1.1.1.1
+  - 1.0.0.1
+  nameserver:
+  - 144.144.144.144     #dns ini juga standrt agar koneksi bisa lancar
+  - 119.29.29.29
+  - 8.8.8.8
+  - 8.8.4.4
+  - 1.1.1.1
+  - 1.0.0.1
+  
+  
+  
+  #pembuatan fallback-filter dan fake-ip-filter untuk record datang yang sudah masuk kejaringan kita jadi untuk mempercepat koneksi
+  
+  fallback:
+  - https://cloudflare-dns.com/dns-query #dns over cloudflare
+  - https://dns.google/dns-query         #dns over google
+  - https://1.1.1.1/dns-query            #ip dns over cloudflare
+  - tls://8.8.8.8:853                    #tls over google
+  - tls:dns.rubyfish.cn:853              #tls over ruby
+  fallback-filter:                       #tujuan memfilterasi ipcidr global
+    geoip: true
+    - 0.0.0.0/8
+    - 10.0.0.0/8
+    - 100.64.0.0/10
+    - 127.0.0.0/8
+    - 169.254.0.0/16
+    - 172.16.0.0/12
+    - 192.0.0.0/24
+    - 192.0.2.0/24
+    - 192.88.99.0/24
+    - 192.168.0.0/16
+    - 198.18.0.0/16
+    - 198.51.100.0/24
+    - 203.0.113.0/24
+    - 224.0.0.0/4
+    - 240.0.0.0/4
+    - 255.255.255.255/32
+    domain:                     #tujuannya filter host wildcar
+    - "+.google.com"
+    - "+.facebook.com"
+    - "+.youtube.com"
+    - "+.githubusercontent.com"
+    fake-ip-filter:             #tujuannya untuk filterasi ip pengalihan
+    - "*.lan"                   #dalam barisan ini kita memfilter bagian jam dunia
+    - time.windows.com
+    - time.nist.gov
+    - time.apple.com
+    - time.asia.apple.com
+    - "*.ntp.org.cn"
+    - "*.openwrt.pool.ntp.org"
+    - time1.cloud.tencent.com
+    - time.ustc.edu.cn
+    - 0.id.pool.ntp.org
+    - 1.id.pool.ntp.org
+    - 2.id.pool.ntp.org
+    - 3.id.pool.ntp.org
+  ipv6: false
+    
